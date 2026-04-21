@@ -1,0 +1,27 @@
+{
+  // https://aka.ms/tsconfig
+  "compilerOptions": {
+    "rootDir": "./examples",
+    "outDir": "./dist",
+
+    "target": "es2023",
+    "module": "esnext",
+    "types": ["vite/client", "@webgpu/types"],
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+
+    "strict": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true,
+  },
+  "include": ["examples"]
+}
