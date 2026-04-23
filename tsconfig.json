@@ -13,7 +13,7 @@
     "declaration": true,
     "declarationMap": true,
 
-    "noUncheckedIndexedAccess": true,
+    "noUncheckedIndexedAccess": false,
     "exactOptionalPropertyTypes": true,
 
     "strict": true,
@@ -23,5 +23,5 @@
     "moduleDetection": "force",
     "skipLibCheck": true,
   },
-  "include": ["examples"]
+  "include": ["examples", "postprocessing"]
 }
