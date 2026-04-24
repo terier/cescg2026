@@ -24,8 +24,8 @@ export function perspective(fovy: number, aspect: number, near: number, far: num
     return [
         [f / aspect, 0, 0, 0],
         [0, f, 0, 0],
-        [0, 0, (far + near) / (near - far), -1],
-        [0, 0, (2 * far * near) / (near - far), 0]
+        [0, 0, far / (near - far), -1],
+        [0, 0, near * far / (near - far), 0]
     ];
 }
 
