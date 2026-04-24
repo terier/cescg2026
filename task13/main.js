@@ -33,10 +33,10 @@ const pipeline = device.createRenderPipeline({
 });
 
 const vertexArray = new Float32Array([
-    -0.5, -0.5, 0,    0, 0,
-     0.5, -0.5, 0,    1, 0,
-    -0.5,  0.5, 0,    0, 1,
-     0.5,  0.5, 0,    1, 1,
+    -0.5, -0.5, 0,    0, 1,
+     0.5, -0.5, 0,    1, 1,
+    -0.5,  0.5, 0,    0, 0,
+     0.5,  0.5, 0,    1, 0,
 ]);
 const vertexBuffer = device.createBuffer({
     size: vertexArray.byteLength,
