@@ -2,7 +2,7 @@ export async function createRenderer(device) {
     const code = await fetch('shader.wgsl').then(response => response.text());
     const module = device.createShaderModule({ code });
 
-    const vertexBufferLayout = {
+    const vertexBufferLayout: GPUVertexBufferLayout = {
         arrayStride: 20,
         attributes: [{
             format: 'float32x3',

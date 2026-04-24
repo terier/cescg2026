@@ -1,8 +1,20 @@
 const adapter = await navigator.gpu.requestAdapter();
+if (!adapter) {
+    throw new Error('WebGPU is not supported by this browser.');
+}
+
 const device = await adapter.requestDevice();
 
 const canvas = document.querySelector('canvas');
+if (!canvas) {
+    throw new Error('Canvas element not found');
+}
+
 const context = canvas.getContext('webgpu');
+if (!context) {
+    throw new Error('WebGPU context not available');
+}
+
 const format = navigator.gpu.getPreferredCanvasFormat();
 context.configure({ device, format });
 canvas.width = canvas.clientWidth;
@@ -11,7 +23,7 @@ canvas.height = canvas.clientHeight;
 const code = await fetch('shader.wgsl').then(response => response.text());
 const module = device.createShaderModule({ code });
 
-const vertexBufferLayout = {
+const vertexBufferLayout: GPUVertexBufferLayout = {
     arrayStride: 8,
     attributes: [{
         format: 'float32x2',
@@ -53,34 +65,14 @@ const uniformBuffer = device.createBuffer({
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 });
 
-const bitmap = await fetch('brick.png')
-    .then(response => response.blob())
-    .then(blob => createImageBitmap(blob));
-const texture = device.createTexture({
-    size: [bitmap.width, bitmap.height],
-    format: 'rgba8unorm',
-    usage:
-        GPUTextureUsage.TEXTURE_BINDING |
-        GPUTextureUsage.COPY_DST |
-        GPUTextureUsage.RENDER_ATTACHMENT,
-});
-device.queue.copyExternalImageToTexture(
-    { source: bitmap },
-    { texture: texture },
-    [bitmap.width, bitmap.height]);
-
-const sampler = device.createSampler();
-
 const bindGroup = device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
     entries: [
         { binding: 0, resource: uniformBuffer },
-        { binding: 1, resource: texture },
-        { binding: 2, resource: sampler },
     ],
 });
 
-function frame(t) {
+function frame(t: number) {
     const c = Math.cos(t / 1000);
     const s = Math.sin(t / 1000);
     const matrix = new Float32Array([

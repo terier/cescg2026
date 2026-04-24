@@ -1,11 +1,20 @@
-import * as mat from './mat.js';
-import * as obj from './obj.js';
-
 const adapter = await navigator.gpu.requestAdapter();
+if (!adapter) {
+    throw new Error('WebGPU is not supported by this browser.');
+}
+
 const device = await adapter.requestDevice();
 
 const canvas = document.querySelector('canvas');
+if (!canvas) {
+    throw new Error('Canvas element not found');
+}
+
 const context = canvas.getContext('webgpu');
+if (!context) {
+    throw new Error('WebGPU context not available');
+}
+
 const format = navigator.gpu.getPreferredCanvasFormat();
 context.configure({ device, format });
 canvas.width = canvas.clientWidth;
@@ -14,7 +23,7 @@ canvas.height = canvas.clientHeight;
 const code = await fetch('shader.wgsl').then(response => response.text());
 const module = device.createShaderModule({ code });
 
-const vertexBufferLayout = {
+const vertexBufferLayout: GPUVertexBufferLayout = {
     arrayStride: 20,
     attributes: [{
         format: 'float32x3',
@@ -30,36 +39,25 @@ const vertexBufferLayout = {
 const pipeline = device.createRenderPipeline({
     vertex: { module, buffers: [vertexBufferLayout] },
     fragment: { module, targets: [{ format }] },
-    depthStencil: {
-        depthWriteEnabled: true,
-        depthCompare: 'less',
-        format: 'depth24plus',
-    },
     layout: 'auto',
 });
 
-const depthTexture = device.createTexture({
-    size: [canvas.width, canvas.height],
-    format: 'depth24plus',
-    usage:
-        GPUTextureUsage.RENDER_ATTACHMENT |
-        GPUTextureUsage.TRANSIENT_ATTACHMENT,
-});
-
-const { vertices, indices } = obj.parse(await fetch('cube.obj').then(response => response.text()));
-const vertexArray = new Float32Array(vertices.length * 5);
-for (let i = 0; i < vertices.length; i++) {
-    const { position, texcoords } = vertices[i];
-    vertexArray.set(position, i * 5);
-    vertexArray.set(texcoords, i * 5 + 3);
-}
+const vertexArray = new Float32Array([
+    -0.5, -0.5, 0,    0, 1,
+     0.5, -0.5, 0,    1, 1,
+    -0.5,  0.5, 0,    0, 0,
+     0.5,  0.5, 0,    1, 0,
+]);
 const vertexBuffer = device.createBuffer({
     size: vertexArray.byteLength,
     usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
 });
 device.queue.writeBuffer(vertexBuffer, 0, vertexArray);
 
-const indexArray = new Uint32Array(indices);
+const indexArray = new Uint32Array([
+    0, 1, 2,
+    2, 1, 3,
+]);
 const indexBuffer = device.createBuffer({
     size: indexArray.byteLength,
     usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
@@ -98,12 +96,16 @@ const bindGroup = device.createBindGroup({
     ],
 });
 
-function frame(t) {
-    const modelMatrix = mat.axisAngle([0, 1, 0], t / 1000);
-    const viewMatrix = mat.translation(0, 0, -5);
-    const projectionMatrix = mat.perspective(1, canvas.width / canvas.height, 0.1, 10);
-    const matrix = mat.multiply(projectionMatrix, viewMatrix, modelMatrix);
-    device.queue.writeBuffer(uniformBuffer, 0, mat.toF32(matrix));
+function frame(t: number) {
+    const c = Math.cos(t / 1000);
+    const s = Math.sin(t / 1000);
+    const matrix = new Float32Array([
+        c, 0, -s, 0,
+        0, 1, 0, 0,
+        s, 0, c, 0,
+        0, 0, 0, 1,
+    ]);
+    device.queue.writeBuffer(uniformBuffer, 0, matrix);
 
     const commandEncoder = device.createCommandEncoder();
     const renderPass = commandEncoder.beginRenderPass({
@@ -112,13 +114,7 @@ function frame(t) {
             loadOp: 'clear',
             clearValue: [1, 1, 0, 1],
             storeOp: 'store',
-        }],
-        depthStencilAttachment: {
-            view: depthTexture,
-            depthLoadOp: 'clear',
-            depthClearValue: 1,
-            depthStoreOp: 'discard',
-        },
+        }]
     });
     renderPass.setPipeline(pipeline);
     renderPass.setVertexBuffer(0, vertexBuffer);
