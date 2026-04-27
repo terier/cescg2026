@@ -1,26 +1,11 @@
 type BlurData = {
-    intermediateTextureView: GPUTextureView;
     pipeline: GPURenderPipeline;
-    textureBindGroup: GPUBindGroup;
     configBindGroupX: GPUBindGroup;
     configBindGroupY: GPUBindGroup;
 };
 
 
 export async function prepareBlur(device: GPUDevice, context: GPUCanvasContext): Promise<BlurData> {
-    const intermediateTexture = device.createTexture({
-        size: [context.canvas.width, context.canvas.height],
-        format: context.getCurrentTexture().format,
-        usage:
-            GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
-    });
-    const intermediateTextureView = intermediateTexture.createView();
-
-    const samplerNoFilter = device.createSampler({
-        minFilter: 'nearest',
-        magFilter: 'nearest'
-    });
-
     const code = await fetch('shader_blur.wgsl').then(response => response.text());
     const module = device.createShaderModule({ code });
     const pipeline = device.createRenderPipeline({
@@ -30,17 +15,9 @@ export async function prepareBlur(device: GPUDevice, context: GPUCanvasContext):
         },
         fragment: {
             module,
-            targets: [{ format: intermediateTexture.format }]
+            targets: [{ format: context.getCurrentTexture().format }]
         },
         layout: 'auto'
-    });
-
-    const textureBindGroup = device.createBindGroup({
-        layout: pipeline.getBindGroupLayout(0),
-        entries: [
-            { binding: 0, resource: intermediateTexture },
-            { binding: 1, resource: samplerNoFilter }
-        ]
     });
 
     const configBufferX = device.createBuffer({
@@ -68,9 +45,7 @@ export async function prepareBlur(device: GPUDevice, context: GPUCanvasContext):
     device.queue.writeBuffer(configBufferY, 0, new Float32Array([0, 1]));
 
     return {
-        intermediateTextureView,
         pipeline,
-        textureBindGroup,
         configBindGroupX,
         configBindGroupY,
     }
