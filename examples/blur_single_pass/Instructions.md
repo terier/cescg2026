@@ -2,7 +2,7 @@
 
 Now that we know how to render a scene to a canvas via the WebGPU API, we can try some more advanced rendering techniques. Here, we will create a simple blur effect over our rendered scene. While this is a rather specific and basic use of post-processing, it demonstrates how to use different render passes, texture management, and shaders to build a post-processing pipeline. With some shader magic and clever texture binding, much more complex and useful effects can be achieved. Let's dive in!
 
-## 1. Starting point
+## 1. Getting started
 
 We will start with the code from task 15. We should be able to render a rotating cube to the canvas and see it in our browser.
 
