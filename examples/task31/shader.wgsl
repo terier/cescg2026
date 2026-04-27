@@ -24,7 +24,6 @@ fn vertex(@location(0) position: vec3f, @location(1) texcoords: vec2f, @location
     let rotatedPosition = M * vec4f(position, 1);
     let translatedPosition = rotatedPosition + vec4f(instancePosition, 0.0);
 
-    //output.clipPosition = P * V * modelTransform * vec4f(position, 1);
     output.clipPosition = P * V * translatedPosition;
     output.texcoords = texcoords;
     return output;
