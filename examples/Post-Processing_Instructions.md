@@ -269,7 +269,7 @@ fn fragment(input: VertexOutput) -> @location(0) vec4f {
 
 We should now see the image blurred along the horizontal axis.
 
-## Task #1
+## Optional Task #1
 
 We have blurred the image only along one axis. To complete the effect, add another render pass that applies a vertical blur. Follow the subtasks below.
 
@@ -281,13 +281,13 @@ We have blurred the image only along one axis. To complete the effect, add anoth
 
 You should now achieve a 2D blur effect!
 
-## Task #2
+## Optional Task #2
 
 One way to create stronger blurring is to use a larger kernel. This can drastically reduce the performance of the shader. Instead, we can blur the image with a smaller kernel multiple times to achieve the same effect.
 
 In the main code, place the blurring render passes inside a for-loop. You will need to consider how to switch texture views and bind groups accordingly. You do not need to create any new textures; three should be sufficient.
 
-## Task #3
+## Optional Task #3
 
 Currently, the kernel size in our shader is static. Change the shader and the main code so that the kernel size is passed as a uniform to the shader.
 
