@@ -36,9 +36,18 @@ const vertexBufferLayout: GPUVertexBufferLayout = {
         shaderLocation: 1,
     }],
 };
+const instanceBufferLayout: GPUVertexBufferLayout = {
+    arrayStride: 12,
+    stepMode: 'instance',
+    attributes: [{
+        format: 'float32x3',
+        offset: 0,
+        shaderLocation: 2
+    }]
+};
 
 const pipeline = device.createRenderPipeline({
-    vertex: { module, buffers: [vertexBufferLayout] },
+    vertex: { module, buffers: [vertexBufferLayout, instanceBufferLayout] },
     fragment: { module, targets: [{ format }] },
     depthStencil: {
         depthWriteEnabled: true,
@@ -108,6 +117,28 @@ const bindGroup = device.createBindGroup({
     ],
 });
 
+// Instances
+
+const instanceCount = 50;
+const instancePositions = new Float32Array(instanceCount * 3);
+for (let i = 0; i < instanceCount; i++) {
+    let offset = i * 3;
+
+    let x = (Math.random() - 0.5) * 30.0;
+    let y = -Math.random() * 5;
+    let z = (Math.random() - 1.0) * 30.0;
+
+    instancePositions[offset] = x;
+    instancePositions[offset + 1] = y;
+    instancePositions[offset + 2] = z;
+}
+
+const instanceBuffer = device.createBuffer({
+    size: instancePositions.byteLength,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+});
+device.queue.writeBuffer(instanceBuffer, 0, instancePositions);
+
 
 function frame(t: number) {
     if (!canvas || !context) {
@@ -139,9 +170,10 @@ function frame(t: number) {
     });
     renderPass.setPipeline(pipeline);
     renderPass.setVertexBuffer(0, vertexBuffer);
+    renderPass.setVertexBuffer(1, instanceBuffer);
     renderPass.setIndexBuffer(indexBuffer, 'uint32');
     renderPass.setBindGroup(0, bindGroup);
-    renderPass.drawIndexed(indexArray.length);
+    renderPass.drawIndexed(indexArray.length, instanceCount);
     renderPass.end();
     device.queue.submit([commandEncoder.finish()]);
 

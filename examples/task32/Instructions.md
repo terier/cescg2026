@@ -38,7 +38,7 @@ fn vertex(@location(0) position: vec3f, @location(1) texcoords: vec2f) -> Vertex
     let V = transform.view;
     let M = transform.model;
 
-    output.clipPosition = P * V * M * vec4f(position, 1.0);
+    output.clipPosition = P * V * M * vec4f(instancePosition, 0.0);
     output.texcoords = texcoords;
     return output;
 }
