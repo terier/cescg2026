@@ -1,22 +1,22 @@
 # Instancing
 
-When we are dealing with a lot of objects that are using the same model data (vertex buffer, index buffer, ...), we can render them issuing just one render pass command instead of one for each object separately. This optimization is called instancing.
+When dealing with many objects that use the same model data (vertex buffer, index buffer, etc.), we can render them with a single render pass command instead of issuing one for each object separately. This optimisation is called instancing.
 
-The way instancing works in WebGPU is that we treat each instance as a sort of "vertex" that holds data, unique for that instance. We say "vertex", because this data is provided in a special vertex buffer. The GPU traverses this vertex data and for each vertex draws the object. The vertex shader can take instance data in as a parameter (just as it would the ordinary vertex data). We can also use a built-in parameter `instance_index` in case we have specific index based rules or wish to index data from external storage buffers.
+In WebGPU, instancing works by treating each instance as a kind of "vertex" that holds data unique to that instance. We refer to it as a "vertex" because this data is provided in a special vertex buffer. The GPU traverses this vertex data and, for each vertex, draws the object. The vertex shader can take instance data as a parameter, just as it would with ordinary vertex data. We can also use the built-in parameter `instance_index` if we have specific index-based rules or wish to index data from external storage buffers.
 
 ## 1. Getting started
 
-We will work with the code from Task 15. We should have a rotating cube appearing in the browser.
+We will work with the code from Task 15. You should see a rotating cube appearing in the browser.
 
 ## 2. The battle plan
 
-We will create a few dozen identical rotating cubes, placed randomly in the scene. We will need to define positions of those cubes which we will store into an instance buffer. We will extend the shader to use these positions.
+We will create a few dozen identical rotating cubes, placed randomly in the scene. We need to define the positions of these cubes, which we will store in an instance buffer. We will extend the shader to use these positions.
 
-We would like to first rotate the cubes in place, then translate them to their designated position, and then apply view and projection transforms. Our shader currently does not support this, exposing only one matrix, so we will extend our uniform to three matrices: model, view, and projection.
+We want to first rotate the cubes in place, then translate them to their designated positions, and finally apply view and projection transforms. Our shader currently does not support this, as it exposes only one matrix, so we will extend our uniform to three matrices: model, view, and projection.
 
 ## 3. The shader - Part 1
 
-Let's handle the shader first. As mentioned above, we will change the uniform in binding 0 to contain three matrices.
+Let us handle the shader first. As mentioned above, we will change the uniform in binding 0 to contain three matrices.
 
 ```wgsl
 struct Transforms {
@@ -24,7 +24,7 @@ struct Transforms {
     view: mat4x4f,
     model: mat4x4f
 };
-@group(0) @binding(0) var<uniform> transform: Transforms;
+@group(0) @binding(0) var transform: Transforms;
 ```
 
 We will also update the vertex shader.
@@ -46,7 +46,7 @@ fn vertex(@location(0) position: vec3f, @location(1) texcoords: vec2f) -> Vertex
 
 ## 4. The uniform buffer
 
-In our main code, we will update the size of our uniform buffer to be able to store three matrices:
+In our main code, we will update the size of our uniform buffer to store three matrices:
 
 ```ts
 const uniformBuffer = device.createBuffer({
@@ -55,7 +55,7 @@ const uniformBuffer = device.createBuffer({
 });
 ```
 
-Inside the render loop, we thus fill in the buffer with computed matrices:
+Inside the render loop, we fill the buffer with the computed matrices:
 
 ```ts
 const modelMatrix = mat.axisAngle([0, 1, 0], t / 1000);
@@ -69,14 +69,13 @@ device.queue.writeBuffer(uniformBuffer, 16 * 8, mat.toF32(modelMatrix));
 
 ## First Checkpoint
 
-We should see the rotating cube again.
-
+You should see the rotating cube again.
 
 ## 5. Pipeline changes
 
-The only thing we will discern our instances by, is their position. So our instance buffer will contain just those. Let's create the buffer layout, which is a type of vertex buffer layout.
+The only thing distinguishing our instances is their position. So our instance buffer will contain only these. Let us create the buffer layout, which is a type of vertex buffer layout.
 
-What makes it different from the classic vertex buffer layout is the option `stepMode` which we set to `instance`. Other parameters are standard. We notify our pipeline that the buffer will contain just 3D vectors at location 2. We keep in mind this location, because we will use it as a parameter in vertex shader later on.
+What makes it different from the classic vertex buffer layout is the `stepMode` option, which we set to `instance`. Other parameters are standard. We notify our pipeline that the buffer will contain only 3D vectors at location 2. Remember this location, as we will use it as a parameter in the vertex shader later.
 
 ```ts
 const instanceBufferLayout: GPUVertexBufferLayout = {
@@ -90,7 +89,7 @@ const instanceBufferLayout: GPUVertexBufferLayout = {
 };
 ```
 
-And update the pipeline so that our vertex shader is aware of the new instance buffer.
+Update the pipeline so that our vertex shader is aware of the new instance buffer.
 
 ```ts
 const pipeline = device.createRenderPipeline({
@@ -105,9 +104,31 @@ const pipeline = device.createRenderPipeline({
 });
 ```
 
-## 6. Instance buffer
+## 6. The shader - Part 2
 
-Let's create some instance positions. We can generate them randomly like so:
+Let us update the shader according to our pipeline. We will rotate the cube with our model matrix and then move it according to the instance position.
+
+```wgsl
+@vertex
+fn vertex(@location(0) position: vec3f, @location(1) texcoords: vec2f, @location(2) instancePosition: vec3f) -> VertexOutput {
+    var output: VertexOutput;
+
+    let P = transform.projection;
+    let V = transform.view;
+    let M = transform.model;
+
+    let rotatedPosition = M * vec4f(position, 1);
+    let translatedPosition = rotatedPosition + vec4f(instancePosition, 0.0);
+
+    output.clipPosition = P * V * translatedPosition;
+    output.texcoords = texcoords;
+    return output;
+}
+```
+
+## 7. Instance buffer
+
+Let us create some instance positions. We can generate them randomly as follows:
 
 ```ts
 const instanceCount = 50;
@@ -125,7 +146,7 @@ for (let i = 0; i < instanceCount; i++) {
 }
 ```
 
-Afterwards, we create a buffer and write the positions into it. We treat this buffer as a vertex buffer.
+Next, we create a buffer and write the positions to it. We treat this buffer as a vertex buffer.
 
 ```ts
 const instanceBuffer = device.createBuffer({
@@ -135,7 +156,7 @@ const instanceBuffer = device.createBuffer({
 device.queue.writeBuffer(instanceBuffer, 0, instancePositions);
 ```
 
-## 7. Render pass
+## 8. Render pass
 
 In the render pass, we bind the instance buffer and extend the `drawIndexed` method.
 
@@ -145,4 +166,4 @@ renderPass.setVertexBuffer(1, instanceBuffer);
 renderPass.drawIndexed(indexArray.length, instanceCount);
 ```
 
-We should now see a bunch of cubes spinning in the scene.
+You should now see several cubes spinning in the scene.
