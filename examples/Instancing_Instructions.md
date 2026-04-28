@@ -167,3 +167,12 @@ renderPass.drawIndexed(indexArray.length, instanceCount);
 ```
 
 You should now see several cubes spinning in the scene.
+
+
+## Optional Task #1
+
+Animate instanced objects. You can change their positions over time by storing their velocities and accelerations, and computing displacements from these values. To create a more appealing animation, you can periodically change the accelerations. You can implement this functionality in the main code.
+
+## Optional Task #2
+
+The result of Optional Task #1 should be a for loop running on the CPU. This may work for 50 or 100 instances, but could struggle with a larger number of objects. Rewrite the code so that accelerations and velocities are computed on the GPU using the compute pass.
