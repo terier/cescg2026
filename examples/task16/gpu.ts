@@ -1,4 +1,4 @@
-export function createMesh(device, { vertices, indices }) {
+export function createMesh(device: GPUDevice, { vertices, indices }: { vertices: any[]; indices: number[] }) {
     const vertexArray = new Float32Array(vertices.length * 5);
     for (let i = 0; i < vertices.length; i++) {
         const { position, texcoords } = vertices[i];
@@ -21,7 +21,7 @@ export function createMesh(device, { vertices, indices }) {
     return { vertexBuffer, indexBuffer, indexCount: indices.length };
 }
 
-export function createDepthTexture(device, size) {
+export function createDepthTexture(device: GPUDevice, size: GPUExtent3D) {
     return device.createTexture({
         size,
         format: 'depth24plus',
@@ -31,7 +31,7 @@ export function createDepthTexture(device, size) {
     });
 }
 
-export function createImageTexture(device, image) {
+export function createImageTexture(device: GPUDevice, image: ImageBitmap) {
     const texture = device.createTexture({
         size: [image.width, image.height],
         format: 'rgba8unorm',
@@ -47,7 +47,7 @@ export function createImageTexture(device, image) {
     return texture;
 }
 
-export function createUniformBuffer(device, size) {
+export function createUniformBuffer(device: GPUDevice, size: number) {
     return device.createBuffer({
         size,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,

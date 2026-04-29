@@ -1,4 +1,4 @@
-export async function createRenderer(device) {
+export async function createRenderer(device: GPUDevice) {
     const code = await fetch('shader.wgsl').then(response => response.text());
     const module = device.createShaderModule({ code });
 
@@ -32,7 +32,7 @@ export async function createRenderer(device) {
     return { device, pipeline, bindGroupLayout };
 }
 
-export function createBindGroup({ device, bindGroupLayout }, uniformBuffer, texture, sampler) {
+export function createBindGroup({ device, bindGroupLayout }: { device: GPUDevice; bindGroupLayout: GPUBindGroupLayout }, uniformBuffer: GPUBuffer, texture: GPUTexture, sampler: GPUSampler) {
     return device.createBindGroup({
         layout: bindGroupLayout,
         entries: [
@@ -43,7 +43,7 @@ export function createBindGroup({ device, bindGroupLayout }, uniformBuffer, text
     });
 }
 
-export function render({ device, pipeline }, { colorTexture, depthTexture }, model) {
+export function render({ device, pipeline }: { device: GPUDevice; pipeline: GPURenderPipeline }, { colorTexture, depthTexture }: { colorTexture: GPUTexture; depthTexture: GPUTexture }, model: any) {
     const commandEncoder = device.createCommandEncoder();
     const renderPass = commandEncoder.beginRenderPass({
         colorAttachments: [{

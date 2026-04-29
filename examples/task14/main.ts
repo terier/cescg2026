@@ -8,12 +8,12 @@ if (!adapter) {
 
 const device = await adapter.requestDevice();
 
-const canvas = document.querySelector('canvas');
+const canvas = document.querySelector('canvas')!;
 if (!canvas) {
     throw new Error('Canvas element not found');
 }
 
-const context = canvas.getContext('webgpu');
+const context = canvas.getContext('webgpu')!;
 if (!context) {
     throw new Error('WebGPU context not available');
 }

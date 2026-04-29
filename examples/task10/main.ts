@@ -10,7 +10,7 @@ if (!canvas) {
     throw new Error('Canvas element not found');
 }
 
-const context = canvas.getContext('webgpu');
+const context = canvas.getContext('webgpu')!;
 if (!context) {
     throw new Error('WebGPU context not available');
 }
