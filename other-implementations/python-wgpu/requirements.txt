@@ -1,0 +1,3 @@
+wgpu==0.31.0
+rendercanvas==2.6.3
+glfw==2.10.0
