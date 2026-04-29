@@ -6,7 +6,7 @@
   "scripts": {
     "start": "vite",
     "dev": "vite",
-    "tscheck": "tsc --noEmit",
+    "tscheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@webgpu/types": "^0.1.69",
