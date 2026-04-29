@@ -40,3 +40,6 @@ Open the URL shown in the terminal in your browser (usually http://localhost:517
 * Example pages are available under `/examples/taskXX/` (e.g. `/task01/`)
 * If you are using VS Code, you can install **wgsl-analyzer** for better WGSL (WebGPU shader language) support (type checking and inference, code completion).
 
+
+## Other implementations
+The repository also contains the basic example implementated with WebGPU bindings in **Rust** and **Python**. You can find them in `other-implementations/` folder.
