@@ -32,14 +32,12 @@ const blurData = await prepareBlur(device, context);
 // Textures
 
 const intermediateTexture1 = device.createTexture({
-    label: 'Intermediate1',
     size: [context.canvas.width, context.canvas.height],
     format: context.getCurrentTexture().format,
     usage:
         GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
 });
 const intermediateTexture2 = device.createTexture({
-    label: 'Intermediate2',
     size: [context.canvas.width, context.canvas.height],
     format: context.getCurrentTexture().format,
     usage:

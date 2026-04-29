@@ -1,0 +1,183 @@
+import * as mat from './mat';
+import * as obj from './obj';
+
+const adapter = await navigator.gpu.requestAdapter();
+if (!adapter) {
+    throw new Error('WebGPU not supported');
+}
+const device = await adapter.requestDevice();
+
+const canvas = document.querySelector('canvas');
+if (!canvas) {
+    throw new Error('Canvas not found');
+}
+const context = canvas.getContext('webgpu');
+if (!context) {
+    throw new Error('WebGPU context not available');
+}
+const format = navigator.gpu.getPreferredCanvasFormat();
+context.configure({ device, format });
+canvas.width = canvas.clientWidth;
+canvas.height = canvas.clientHeight;
+
+const code = await fetch('shader.wgsl').then(response => response.text());
+const module = device.createShaderModule({ code });
+
+const vertexBufferLayout: GPUVertexBufferLayout = {
+    arrayStride: 20,
+    stepMode: 'vertex',
+    attributes: [{
+        format: 'float32x3',
+        offset: 0,
+        shaderLocation: 0,
+    }, {
+        format: 'float32x2',
+        offset: 12,
+        shaderLocation: 1,
+    }],
+};
+const instanceBufferLayout: GPUVertexBufferLayout = {
+    arrayStride: 12,
+    stepMode: 'instance',
+    attributes: [{
+        format: 'float32x3',
+        offset: 0,
+        shaderLocation: 2
+    }]
+};
+
+const pipeline = device.createRenderPipeline({
+    vertex: { module, buffers: [vertexBufferLayout, instanceBufferLayout] },
+    fragment: { module, targets: [{ format }] },
+    depthStencil: {
+        depthWriteEnabled: true,
+        depthCompare: 'less',
+        format: 'depth24plus',
+    },
+    layout: 'auto',
+});
+
+const depthTexture = device.createTexture({
+    size: [canvas.width, canvas.height],
+    format: 'depth24plus',
+    usage:
+        GPUTextureUsage.RENDER_ATTACHMENT |
+        GPUTextureUsage.TRANSIENT_ATTACHMENT,
+});
+
+const { vertices, indices } = obj.parse(await fetch('cube.obj').then(response => response.text()));
+const vertexArray = new Float32Array(vertices.length * 5);
+for (let i = 0; i < vertices.length; i++) {
+    const { position, texcoords } = vertices[i];
+    vertexArray.set(position, i * 5);
+    vertexArray.set(texcoords, i * 5 + 3);
+}
+const vertexBuffer = device.createBuffer({
+    size: vertexArray.byteLength,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+});
+device.queue.writeBuffer(vertexBuffer, 0, vertexArray);
+
+const indexArray = new Uint32Array(indices);
+const indexBuffer = device.createBuffer({
+    size: indexArray.byteLength,
+    usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+});
+device.queue.writeBuffer(indexBuffer, 0, indexArray);
+
+const uniformBuffer = device.createBuffer({
+    size: 4 * 4 * 4 * 3,
+    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+});
+
+const bitmap = await fetch('brick.png')
+    .then(response => response.blob())
+    .then(blob => createImageBitmap(blob));
+const texture = device.createTexture({
+    size: [bitmap.width, bitmap.height],
+    format: 'rgba8unorm',
+    usage:
+        GPUTextureUsage.TEXTURE_BINDING |
+        GPUTextureUsage.COPY_DST |
+        GPUTextureUsage.RENDER_ATTACHMENT,
+});
+device.queue.copyExternalImageToTexture(
+    { source: bitmap },
+    { texture: texture },
+    [bitmap.width, bitmap.height]);
+
+const sampler = device.createSampler();
+
+const bindGroup = device.createBindGroup({
+    layout: pipeline.getBindGroupLayout(0),
+    entries: [
+        { binding: 0, resource: { buffer: uniformBuffer } },
+        { binding: 1, resource: texture },
+        { binding: 2, resource: sampler },
+    ],
+});
+
+// Instances
+
+const instanceCount = 50;
+const instancePositions = new Float32Array(instanceCount * 3);
+for (let i = 0; i < instanceCount; i++) {
+    let offset = i * 3;
+
+    let x = (Math.random() - 0.5) * 30.0;
+    let y = -Math.random() * 5;
+    let z = (Math.random() - 1.0) * 30.0;
+
+    instancePositions[offset] = x;
+    instancePositions[offset + 1] = y;
+    instancePositions[offset + 2] = z;
+}
+
+const instanceBuffer = device.createBuffer({
+    size: instancePositions.byteLength,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+});
+device.queue.writeBuffer(instanceBuffer, 0, instancePositions);
+
+
+function frame(t: number) {
+    if (!canvas || !context) {
+        return;
+    }
+
+    const modelMatrix = mat.axisAngle([0, 1, 0], t / 1000);
+    const viewMatrix = mat.translation(0, 0, -5);
+    const projectionMatrix = mat.perspective(1, canvas.width / canvas.height, 0.1, 100);
+
+    device.queue.writeBuffer(uniformBuffer, 0, mat.toF32(projectionMatrix));
+    device.queue.writeBuffer(uniformBuffer, 16 * 4, mat.toF32(viewMatrix));
+    device.queue.writeBuffer(uniformBuffer, 16 * 8, mat.toF32(modelMatrix));
+
+    const commandEncoder = device.createCommandEncoder();
+    const renderPass = commandEncoder.beginRenderPass({
+        colorAttachments: [{
+            view: context.getCurrentTexture().createView(),
+            loadOp: 'clear',
+            clearValue: [1, 1, 0, 1],
+            storeOp: 'store',
+        }],
+        depthStencilAttachment: {
+            view: depthTexture,
+            depthLoadOp: 'clear',
+            depthClearValue: 1,
+            depthStoreOp: 'discard',
+        },
+    });
+    renderPass.setPipeline(pipeline);
+    renderPass.setVertexBuffer(0, vertexBuffer);
+    renderPass.setVertexBuffer(1, instanceBuffer);
+    renderPass.setIndexBuffer(indexBuffer, 'uint32');
+    renderPass.setBindGroup(0, bindGroup);
+    renderPass.drawIndexed(indexArray.length, instanceCount);
+    renderPass.end();
+    device.queue.submit([commandEncoder.finish()]);
+
+    requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
