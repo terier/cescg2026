@@ -107,7 +107,7 @@ The following code should be placed after the scene initialisation, but before t
 ```ts
 const code = await fetch('blur_shader.wgsl').then(response => response.text());
 const module = device.createShaderModule({ code });
-const pipeline = device.createRenderPipeline({
+const blurPipeline = device.createRenderPipeline({
     vertex: {
         module,
         buffers: []
@@ -166,7 +166,7 @@ Add the following after the existing render pass, but before submitting the comm
 ```ts
 const blurRenderPass = commandEncoder.beginRenderPass({
     colorAttachments: [{
-        view: context.getCurrentTexture(),
+        view: context.getCurrentTexture().createView(),
         loadOp: 'clear',
         clearValue: [0, 0, 0, 1],
         storeOp: 'store',
@@ -191,7 +191,7 @@ Extend the new shader with a bind group that holds our texture and its sampler:
 
 ```wgsl
 @group(0) @binding(0)
-var texture: texture_2d;
+var texture: texture_2d<f32>;
 @group(0) @binding(1)
 var textureSampler: sampler;
 ```
