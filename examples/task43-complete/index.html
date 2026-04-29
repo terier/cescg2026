@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <script type="module" src="main.ts"></script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="topbar">
+      <label>
+        Mode
+        <select id="mode">
+          <option value="cpu">CPU</option>
+          <option value="gpu">GPU compute</option>
+        </select>
+      </label>
+
+      <label>
+        <input id="particles" type="number" min="1" value="100" />
+        Particles
+      </label>
+
+      <label>
+        <input id="height" type="number" min="1" value="50" />
+        Physical height
+      </label>
+
+      <button id="reset">Reset</button>
+
+      <div><span id="fps">0.00</span> fps</div>
+      <div><span id="bounces">0</span> bounces</div>
+    </div>
+    <canvas id="canvas"></canvas>
+  </body>
+</html>
