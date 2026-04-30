@@ -179,7 +179,7 @@ const computeParameters = new Float32Array([
   PARAMETERS.height,
   PARAMETERS.radius,
   PARAMETERS.gravity,
-  0,
+  dT,
   particleCount,
   0,
   0,
